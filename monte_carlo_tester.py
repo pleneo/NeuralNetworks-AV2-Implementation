@@ -9,6 +9,7 @@ def tests_set(M, R = 500):
     specificities = []
     precisions = []
     f1_scores = []
+    confusion_matrixes = []
 
     for i in range(R):
         W = np.random.uniform(0, 1, M.shape[1])
@@ -24,13 +25,33 @@ def tests_set(M, R = 500):
         tester = MonteCarloTester(M_test, W)
 
         confusion_matrix = tester.run_test()
+        confusion_matrixes.append(confusion_matrix)
 
         accuracy, sensibility, specificity, precision, f1_score = tester.calcutate_validation_metrics(confusion_matrix)
+
         accuracies.append(accuracy)
         sensibilities.append(sensibility)
         specificities.append(specificity)
         precisions.append(precision)
         f1_scores.append(f1_score)
+
+    argmin_acc, argmax_acc = np.argmin(accuracies), np.argmax(accuracies)
+    argmin_sens, argmax_sens = np.argmin(sensibilities), np.argmax(sensibilities)
+    argmin_spec, argmax_spec = np.argmin(specificities), np.argmax(specificities)
+    argmin_prec, argmax_prec = np.argmin(precisions), np.argmax(precisions)
+    argmin_f1, argmax_f1 = np.argmin(f1_scores), np.argmax(f1_scores)
+
+    min_acc_cm, max_acc_cm = confusion_matrixes[argmin_acc], confusion_matrixes[argmax_acc]
+    min_sens_cm, max__cm = confusion_matrixes[argmin_sens], confusion_matrixes[argmax_sens]
+    min_spec_cm, max__cm = confusion_matrixes[argmin_spec], confusion_matrixes[argmax_spec]
+    min_prec_cm, max__cm = confusion_matrixes[argmin_prec], confusion_matrixes[argmax_prec]
+    min_f1_cm, max__cm = confusion_matrixes[argmin_f1], confusion_matrixes[argmax_f1]
+
+    min_acc, max_acc = np.min(accuracies), np.max(accuracies)
+    min_sens, max_sens = np.min(sensibilities), np.max(sensibilities)
+    min_spec, max_spec = np.min(specificities), np.max(specificities)
+    min_prec, max_prec = np.min(precisions), np.max(precisions)
+    min_f1, max_f1 = np.min(f1_scores), np.max(f1_scores)
 
     return accuracies, sensibilities, specificities, precisions, f1_scores
 
