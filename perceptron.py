@@ -1,5 +1,9 @@
 import numpy as np
 
+'''
+Cria o perceptron, passando como parametro a matriz de entrada de treino (bias, x1,x2), o vetor W de pesos, o vetor y de resultados,
+o max_epochs e o learning rate. Possui o método fit() que treina o modelo.
+'''
 class Perceptron:
     def __init__(self,X,M,W,y, max_epochs = 10000, learning_rate = 0.01):
         self.X = X
@@ -9,7 +13,7 @@ class Perceptron:
         self.max_epochs = max_epochs
         self.learning_rate = learning_rate
 
-    def _degrau_bipolar(self, x):
+    def _bipolar_step_activation_function(self, x):
         if x >= 0:
             return 1
         else:
@@ -27,7 +31,7 @@ class Perceptron:
             for x in range(self.X.shape[0]):
                 x_k = self.X[x]
                 u_k = np.dot(self.W, x_k)
-                y_k = self._degrau_bipolar(u_k)
+                y_k = self._bipolar_step_activation_function(u_k)
                 d_k = self.y[x]
                 if y_k != d_k:
                     self.W = self.W + (learning_rate * (d_k - y_k) * x_k)
@@ -35,5 +39,5 @@ class Perceptron:
             epochs += 1
 
 
-        print("Convergence reached by max epochs" if epochs == self.max_epochs else "Convergence reached in " + epochs + " epochs")
+        print("Convergence reached by max epochs" if epochs == self.max_epochs else 'hi lorena')
 

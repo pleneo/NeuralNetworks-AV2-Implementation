@@ -50,5 +50,4 @@ class ParametersSeparator:
         '''
         W = np.random.uniform(0, 1, X_to_train.shape[1])
 
-
         return M, X_to_train, W, y, x1, x2
