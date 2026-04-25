@@ -1,4 +1,39 @@
 import numpy as np
+from data_monte_carlifier_splitter import DataMonteCarlifier
+from perceptron import Perceptron
+
+
+def tests_set(M, R = 500):
+    accuracies = []
+    sensibilities = []
+    specificities = []
+    precisions = []
+    f1_scores = []
+
+    for i in range(R):
+        W = np.random.uniform(0, 1, M.shape[1])
+
+        M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
+
+        rosenblattPerceptron = Perceptron(M_train[:, :3], M_train, W, M_train[:, -1], 100, .5)
+
+        rosenblattPerceptron.fit()
+
+        W = rosenblattPerceptron.W
+
+        tester = MonteCarloTester(M_test, W)
+
+        confusion_matrix = tester.run_test()
+
+        accuracy, sensibility, specificity, precision, f1_score = tester.calcutate_validation_metrics(confusion_matrix)
+        accuracies.append(accuracy)
+        sensibilities.append(sensibility)
+        specificities.append(specificity)
+        precisions.append(precision)
+        f1_scores.append(f1_score)
+
+    return accuracies, sensibilities, specificities, precisions, f1_scores
+
 
 class MonteCarloTester:
     def __init__(self, M_test, W):
@@ -56,3 +91,4 @@ class MonteCarloTester:
         f1_score = (precision * sensibility) / (precision + sensibility)
 
         return accuracy, sensibility, specificity, precision, f1_score
+

@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from parameters_separator import ParametersSeparator
 from perceptron import Perceptron
 from data_monte_carlifier_splitter import DataMonteCarlifier
-from monte_carlo_tester import MonteCarloTester
+from monte_carlo_tester import MonteCarloTester, tests_set
+
 '''
 Cria os parâmetros necessários a partir da classe que separa os parametros do csv.
 '''
@@ -44,11 +45,11 @@ Agora vem os testes.
 acurácia: nº de acertos / nº de casos de teste.
 '''
 
-tester = MonteCarloTester(M_test, W)
-
-confusion_matrix = tester.run_test()
-
-accuracy, sensibility, specificity, precision, f1_score = tester.calcutate_validation_metrics(confusion_matrix)
+# tester = MonteCarloTester(M_test, W)
+#
+# confusion_matrix = tester.run_test()
+#
+# accuracy, sensibility, specificity, precision, f1_score = tester.calcutate_validation_metrics(confusion_matrix)
 
 '''
 Na primeira vez que rodei, retornou:
@@ -57,11 +58,23 @@ Na primeira vez que rodei, retornou:
 isso significa:
 79.64% de acurácia, que a principio parece ser um valor interessante de acerto.
 97.5% de sensiblidade,o que indica alto acerto de positivos (Verdadeiros Positivos / True Positives)
-Mas a especificidade mostra o erro crasso do modelo (perceptron simples): 35% de acerto, ou seja, para valores negativos, houve altissima falha,
+Mas a especificidade mostra o erro crasso do modelo (perceptron simples):
+tester = MonteCarloTester(M_test, W)
+
+confusion_matrix = tester.run_test()
+ 35% de acerto, ou seja, para valores negativos, houve altissima falha,
 mostrando que o modelo está enviesado para valores positivos e só acerta eles devido maior densidade de amostras que retornam positivo.
 Precisão de 78.94% demonstra que a maior parte dos positivos preditos realmente são positivos
 
 Mas o f1-score mostra que a média harmônica entre a precisão e a sensibilidade mostra que o modelo foi teve baixa performance (43.62%),
 mostrando que o modelo é péssimo em situaçaõ onde o resultante final é negativo.
 '''
-print(accuracy,sensibility,specificity,precision,f1_score)
+# print(accuracy,sensibility,specificity,precision,f1_score)
+
+accuracies, sensibilities, specificities, precisions, f1_scores =  tests_set(M,10)
+
+print(np.mean(accuracies))
+print(np.mean(sensibilities))
+print(np.mean(specificities))
+print(np.mean(precisions))
+print(np.mean(f1_scores))
