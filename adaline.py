@@ -34,7 +34,7 @@ class Adaline:
         epochs = 0
         isPrecisionReached = False
 
-        while epochs <= max_epochs and not isPrecisionReached:
+        while epochs < max_epochs and not isPrecisionReached:
             eqm_antiga = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
 
             for i in range(self.M.shape[0]):
@@ -48,17 +48,17 @@ class Adaline:
             eqm_atual = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
 
             if abs(eqm_atual - eqm_antiga) <= precision:
-                print("reached precision ", precision)
-                print(eqm_atual - eqm_antiga)
+                # print("reached precision ", precision)
+                # print(eqm_atual - eqm_antiga)
                 isPrecisionReached = True
 
-        if epochs >= max_epochs:
-            print(epochs)
-            print(abs(eqm_atual - eqm_antiga))
-            print("Converged by reaching max epochs")
+        # if epochs >= max_epochs:
+            # print(epochs)
+            # print(abs(eqm_atual - eqm_antiga))
+            # print("Converged by reaching max epochs")
 
-        if isPrecisionReached:
-            print(abs(eqm_atual - eqm_antiga))
-            print("Converged by reaching the desired precision")
+        # if isPrecisionReached:
+        #     # print(abs(eqm_atual - eqm_antiga))
+        #     # print("Converged by reaching the desired precision")
 
         return W
