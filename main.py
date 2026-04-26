@@ -4,6 +4,7 @@ from parameters_separator import ParametersSeparator
 from perceptron import Perceptron
 from data_monte_carlifier_splitter import DataMonteCarlifier
 from monte_carlo_tester import MonteCarloTester, tests_set
+from adaline import Adaline
 
 '''
 Cria os parâmetros necessários a partir da classe que separa os parametros do csv.
@@ -18,6 +19,7 @@ Retorna as matrizes contendo o bias,
 M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
 
 rosenblattPerceptron = Perceptron(M_train[:, :3], M_train, W, M_train[:,-1], 100, .5)
+
 
 figure = plt.figure()
 ax = figure.add_subplot()
@@ -38,7 +40,26 @@ if W[2] != 0:
     x2_space = (W[0] - W[1] * x1_space) / W[2]
     ax.plot(x1_space, x2_space, color='r', label='Fronteira')
 
+adaline = Adaline(M)
+W_adaline = adaline.fit(1000, .001, .01)
+
+if W_adaline[2] != 0:
+    x2_adaline_space = (W_adaline[0] - W_adaline[1] * x1_space) / W_adaline[2]
+    ax.plot(x1_space, x2_adaline_space, color='b', label='Fronteira')
+
+
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
 
 '''
 Agora vem os testes.

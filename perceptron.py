@@ -39,5 +39,5 @@ class Perceptron:
             epochs += 1
 
 
-        print("Convergence reached by max epochs" if epochs == self.max_epochs else 'hi lorena')
+        #print("Convergence reached by max epochs" if epochs == self.max_epochs else 'hi lorena')
 
