@@ -1,39 +1,64 @@
 import numpy as np
 from data_monte_carlifier_splitter import DataMonteCarlifier
 from perceptron import Perceptron
+from adaline import Adaline
 
-
-def tests_set(M, R = 500):
-    accuracies = []
-    sensibilities = []
-    specificities = []
-    precisions = []
-    f1_scores = []
-    confusion_matrixes = []
+def tests_set(M, R = 500, max_epochs = 10000, learning_rate = 0.0001, precision = 1e-6):
+    accuracies = [[],[]]
+    sensibilities = [[],[]]
+    specificities = [[],[]]
+    precisions = [[],[]]
+    f1_scores = [[],[]]
+    confusion_matrixes_perceptron = []
+    confusion_matrixes_adaline = []
 
     for i in range(R):
-        W = np.random.uniform(0, 1, M.shape[1])
-
         M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
 
-        rosenblattPerceptron = Perceptron(M_train[:, :3], M_train, W, M_train[:, -1], 100, .5)
+        W = np.random.uniform(0, 1, M_train.shape[1]-1)
+
+        rosenblattPerceptron = Perceptron(M_train[:, :3], M_train, W, M_train[:, -1], max_epochs, learning_rate)
 
         rosenblattPerceptron.fit()
 
-        W = rosenblattPerceptron.W
+        W_perceptron = rosenblattPerceptron.W
 
-        tester = MonteCarloTester(M_test, W)
 
-        confusion_matrix = tester.run_test()
-        confusion_matrixes.append(confusion_matrix)
+        adaline = Adaline(M_train[:, 1:])
+        W_adaline = adaline.fit(max_epochs, learning_rate, precision)
 
-        accuracy, sensibility, specificity, precision, f1_score = tester.calcutate_validation_metrics(confusion_matrix)
 
-        accuracies.append(accuracy)
-        sensibilities.append(sensibility)
-        specificities.append(specificity)
-        precisions.append(precision)
-        f1_scores.append(f1_score)
+        tester_perceptron = MonteCarloTester(M_test, W_perceptron)
+
+        confusion_matrix_perceptron = tester_perceptron.run_test()
+        confusion_matrixes_perceptron.append(confusion_matrix_perceptron)
+
+        accuracy, sensibility, specificity, precision, f1_score = tester_perceptron.calcutate_validation_metrics(confusion_matrix_perceptron)
+
+        accuracies[0].append(accuracy)
+        sensibilities[0].append(sensibility)
+        specificities[0].append(specificity)
+        precisions[0].append(precision)
+        f1_scores[0].append(f1_score)
+
+
+        tester_adaline = MonteCarloTester(M_test, W_adaline)
+
+        confusion_matrix_adaline = tester_adaline.run_test()
+        confusion_matrixes_adaline.append(confusion_matrix_adaline)
+
+        accuracy, sensibility, specificity, precision, f1_score = tester_adaline.calcutate_validation_metrics(confusion_matrix_adaline)
+
+        accuracies[1].append(accuracy)
+        sensibilities[1].append(sensibility)
+        specificities[1].append(specificity)
+        precisions[1].append(precision)
+        f1_scores[1].append(f1_score)
+
+
+
+
+
 
     argmin_acc, argmax_acc = np.argmin(accuracies), np.argmax(accuracies)
     argmin_sens, argmax_sens = np.argmin(sensibilities), np.argmax(sensibilities)
@@ -41,17 +66,17 @@ def tests_set(M, R = 500):
     argmin_prec, argmax_prec = np.argmin(precisions), np.argmax(precisions)
     argmin_f1, argmax_f1 = np.argmin(f1_scores), np.argmax(f1_scores)
 
-    min_acc_cm, max_acc_cm = confusion_matrixes[argmin_acc], confusion_matrixes[argmax_acc]
-    min_sens_cm, max__cm = confusion_matrixes[argmin_sens], confusion_matrixes[argmax_sens]
-    min_spec_cm, max__cm = confusion_matrixes[argmin_spec], confusion_matrixes[argmax_spec]
-    min_prec_cm, max__cm = confusion_matrixes[argmin_prec], confusion_matrixes[argmax_prec]
-    min_f1_cm, max__cm = confusion_matrixes[argmin_f1], confusion_matrixes[argmax_f1]
+    # min_acc_cm, max_acc_cm = confusion_matrixes_perceptron[argmin_acc], confusion_matrixes_perceptron[argmax_acc]
+    # min_sens_cm, max__cm = confusion_matrixes_perceptron[argmin_sens], confusion_matrixes_perceptron[argmax_sens]
+    # min_spec_cm, max__cm = confusion_matrixes_perceptron[argmin_spec], confusion_matrixes_perceptron[argmax_spec]
+    # min_prec_cm, max__cm = confusion_matrixes_perceptron[argmin_prec], confusion_matrixes_perceptron[argmax_prec]
+    # min_f1_cm, max__cm = confusion_matrixes_perceptron[argmin_f1], confusion_matrixes_perceptron[argmax_f1]
 
-    min_acc, max_acc = np.min(accuracies), np.max(accuracies)
-    min_sens, max_sens = np.min(sensibilities), np.max(sensibilities)
-    min_spec, max_spec = np.min(specificities), np.max(specificities)
-    min_prec, max_prec = np.min(precisions), np.max(precisions)
-    min_f1, max_f1 = np.min(f1_scores), np.max(f1_scores)
+#     min_acc, max_acc = np.min(accuracies), np.max(accuracies)
+#     min_sens, max_sens = np.min(sensibilities), np.max(sensibilities)
+#     min_spec, max_spec = np.min(specificities), np.max(specificities)
+#     min_prec, max_prec = np.min(precisions), np.max(precisions)
+#     min_f1, max_f1 = np.min(f1_scores), np.max(f1_scores)
 
     return accuracies, sensibilities, specificities, precisions, f1_scores
 
@@ -104,12 +129,12 @@ class MonteCarloTester:
         FP = confusion_matrix[0][1]
         FN = confusion_matrix[1][0]
 
-        accuracy = (VP + VN)/(VP+VN+FP+FN)
-        sensibility = VP/(VP+FN)
-        specificity = VN/(VN+FP)
-        precision = VP/(VP+FP)
+        accuracy = (VP + VN) / (VP + VN + FP + FN)
+        sensibility = VP / (VP + FN) if (VP + FN) != 0 else np.nan
+        specificity = VN / (VN + FP) if (VN + FP) != 0 else np.nan
+        precision = VP / (VP + FP) if (VP + FP) != 0 else 0.0
 
-        f1_score = (precision * sensibility) / (precision + sensibility)
+        f1_score = (2 * precision * sensibility) / (precision + sensibility) if (precision + sensibility) != 0 else 0.0
 
         return accuracy, sensibility, specificity, precision, f1_score
 
