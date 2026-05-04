@@ -1,24 +1,30 @@
+from pathlib import Path
+
 import numpy as np
 
 class ParametersSeparator:
     def __init__(self, file_name: str, x_cols):
-        self.file_name = file_name
+        self.file_name = Path(file_name)
 
 
     def createParameters(self):
 
-        M = np.loadtxt(self.file_name, delimiter=',')
+        data_file = self.file_name
+        if not data_file.is_absolute():
+            data_file = Path(__file__).resolve().parent / data_file
+
+        M = np.loadtxt(data_file, delimiter=',')
         """
         Crio a matrix X de entradas contendo as colunas 0 e 1 (duas primeiras). Essas duas colunas representam os x1 e x2
         de cada amostra. Dessa maneira, cada linha da da matrix Nx2 será o x1 e x2 de uma amostra.
         """
-        X = np.loadtxt(self.file_name, delimiter=',', usecols=(0, 1))
+        X = np.loadtxt(data_file, delimiter=',', usecols=(0, 1))
 
         '''
             y é o vetor coluna referente a saída encontrada de cada amostra. Nesse conjunto de dados, as saídas estão no formato
             degrau bipolar, onde cada linha do vetor Nx1 é uma saída do conjunto de entradas daquela amostra. 
             '''
-        y = np.loadtxt("spiral_d (1).csv", delimiter=',', usecols=-1)
+        y = np.loadtxt(data_file, delimiter=',', usecols=-1)
 
         '''
         Transformar as colunas 0 e 1 (x1 e x2) em vetores coluna para ser possível apresentá-los de maneira apropriada.

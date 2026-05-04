@@ -5,6 +5,7 @@ from perceptron import Perceptron
 from data_monte_carlifier_splitter import DataMonteCarlifier
 from monte_carlo_tester import MonteCarloTester, tests_set
 from adaline import Adaline
+from multilayered_perceptron import MultilayeredPerceptron
 
 '''
 Cria os parâmetros necessários a partir da classe que separa os parametros do csv.
@@ -47,6 +48,11 @@ if W_adaline[2] != 0:
     x2_adaline_space = (W_adaline[0] - W_adaline[1] * x1_space) / W_adaline[2]
     ax.plot(x1_space, x2_adaline_space, color='b', label='Fronteira')
 
+X_train_mlp = M_train[:, 1:3].T
+Y_train_mlp = M_train[:, -1].reshape(1, -1)
+mlp = MultilayeredPerceptron([10], X_train_mlp, Y_train_mlp, learning_rate=1e-2, max_epochs=5000, precision=1e-6)
+mlp.fit()
+
 
 plt.show()
 
@@ -72,6 +78,14 @@ confusion_matrix_perceptron = tester_perceptron.run_test()
 
 accuracy, sensibility, specificity, precision, f1_score = tester_perceptron.calcutate_validation_metrics(confusion_matrix_perceptron)
 
+tester_adaline = MonteCarloTester(M_test, W_adaline)
+confusion_matrix_adaline = tester_adaline.run_test()
+accuracy_adaline, sensibility_adaline, specificity_adaline, precision_adaline, f1_score_adaline = tester_adaline.calcutate_validation_metrics(confusion_matrix_adaline)
+
+tester_mlp = MonteCarloTester(M_test, mlp)
+confusion_matrix_mlp = tester_mlp.run_test()
+accuracy_mlp, sensibility_mlp, specificity_mlp, precision_mlp, f1_score_mlp = tester_mlp.calcutate_validation_metrics(confusion_matrix_mlp)
+
 '''
 Na primeira vez que rodei, retornou:
 0.7964285714285714 0.975 0.35 0.7894736842105263 0.43624161073825507
@@ -92,7 +106,17 @@ mostrando que o modelo é péssimo em situaçaõ onde o resultante final é nega
 '''
 # print(accuracy,sensibility,specificity,precision,f1_score)
 
-accuracies, sensibilities, specificities, precisions, f1_scores =  tests_set(M, 1, 11, .001)
+accuracies, sensibilities, specificities, precisions, f1_scores = tests_set(
+    M,
+    R=1,
+    max_epochs=10,
+    learning_rate=.001,
+    precision=1e-6,
+    mlp_topology=(10,),
+    mlp_learning_rate=1e-2,
+    mlp_max_epochs=10,
+    mlp_precision=1e-3,
+)
 
 print("\n\n ------- PERCEPTRON ------ \n\n")
 
@@ -113,3 +137,11 @@ print(np.mean(specificities[1]))
 print(np.mean(precisions[1]))
 print(np.mean(f1_scores[1]))
 
+print("\n\n ------- MLP ------ \n\n")
+
+print("METRICS REACHED: ")
+print(np.mean(accuracies[2]))
+print(np.mean(sensibilities[2]))
+print(np.mean(specificities[2]))
+print(np.mean(precisions[2]))
+print(np.mean(f1_scores[2]))

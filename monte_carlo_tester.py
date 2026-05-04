@@ -2,15 +2,27 @@ import numpy as np
 from data_monte_carlifier_splitter import DataMonteCarlifier
 from perceptron import Perceptron
 from adaline import Adaline
+from multilayered_perceptron import MultilayeredPerceptron
 
-def tests_set(M, R = 500, max_epochs = 10000, learning_rate = 0.0001, precision = 1e-6):
-    accuracies = [[],[]]
-    sensibilities = [[],[]]
-    specificities = [[],[]]
-    precisions = [[],[]]
-    f1_scores = [[],[]]
+def tests_set(
+    M,
+    R=500,
+    max_epochs=10000,
+    learning_rate=0.0001,
+    precision=1e-6,
+    mlp_topology=(10,),
+    mlp_learning_rate=1e-2,
+    mlp_max_epochs=1000,
+    mlp_precision=1e-6,
+):
+    accuracies = [[],[],[]]
+    sensibilities = [[],[],[]]
+    specificities = [[],[],[]]
+    precisions = [[],[],[]]
+    f1_scores = [[],[],[]]
     confusion_matrixes_perceptron = []
     confusion_matrixes_adaline = []
+    confusion_matrixes_mlp = []
 
     for i in range(R):
         M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
@@ -26,6 +38,18 @@ def tests_set(M, R = 500, max_epochs = 10000, learning_rate = 0.0001, precision 
 
         adaline = Adaline(M_train[:, 1:])
         W_adaline = adaline.fit(max_epochs, learning_rate, precision)
+
+        X_train_mlp = M_train[:, 1:3].T
+        Y_train_mlp = M_train[:, -1].reshape(1, -1)
+        mlp = MultilayeredPerceptron(
+            list(mlp_topology),
+            X_train_mlp,
+            Y_train_mlp,
+            mlp_learning_rate,
+            mlp_max_epochs,
+            mlp_precision,
+        )
+        mlp.fit()
 
 
         tester_perceptron = MonteCarloTester(M_test, W_perceptron)
@@ -55,6 +79,19 @@ def tests_set(M, R = 500, max_epochs = 10000, learning_rate = 0.0001, precision 
         precisions[1].append(precision)
         f1_scores[1].append(f1_score)
 
+        tester_mlp = MonteCarloTester(M_test, mlp)
+
+        confusion_matrix_mlp = tester_mlp.run_test()
+        confusion_matrixes_mlp.append(confusion_matrix_mlp)
+
+        accuracy, sensibility, specificity, precision, f1_score = tester_mlp.calcutate_validation_metrics(confusion_matrix_mlp)
+
+        accuracies[2].append(accuracy)
+        sensibilities[2].append(sensibility)
+        specificities[2].append(specificity)
+        precisions[2].append(precision)
+        f1_scores[2].append(f1_score)
+
 
 
 
@@ -82,9 +119,9 @@ def tests_set(M, R = 500, max_epochs = 10000, learning_rate = 0.0001, precision 
 
 
 class MonteCarloTester:
-    def __init__(self, M_test, W):
+    def __init__(self, M_test, model_or_weights):
         self.M_test = M_test
-        self.W = W
+        self.model_or_weights = model_or_weights
 
     def _bipolar_step_activation_function(self, x):
         if x >= 0:
@@ -97,8 +134,7 @@ class MonteCarloTester:
         confusion_matrix = [[0,0],[0,0]]
 
         for i in range(X_test.shape[0]):
-            u_k = np.dot(X_test[i], self.W)
-            y_k = self._bipolar_step_activation_function(u_k)
+            y_k = self._predict_sample(X_test[i])
             d_k = self.M_test[i, -1]
 
             if d_k == y_k and (d_k == +1 and y_k == +1):
@@ -114,6 +150,14 @@ class MonteCarloTester:
                 confusion_matrix[1][0]+=1 #FN
 
         return confusion_matrix
+
+    def _predict_sample(self, x_with_bias):
+        if hasattr(self.model_or_weights, "predict"):
+            prediction = self.model_or_weights.predict(x_with_bias[1:])
+            return int(np.asarray(prediction).reshape(-1)[0])
+
+        u_k = np.dot(x_with_bias, self.model_or_weights)
+        return self._bipolar_step_activation_function(u_k)
 
     '''
     Calcula as métricas de validação a partir da matriz de confusão retornada de run_test().
@@ -137,4 +181,3 @@ class MonteCarloTester:
         f1_score = (2 * precision * sensibility) / (precision + sensibility) if (precision + sensibility) != 0 else 0.0
 
         return accuracy, sensibility, specificity, precision, f1_score
-
