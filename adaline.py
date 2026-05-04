@@ -4,6 +4,8 @@ import numpy as np
 class Adaline:
     def __init__(self, M):
         self.M = M
+        self.W = None
+        self.learning_curve = []
 
     def _bipolar_step_activation_function(self, x):
         if x >= 0:
@@ -23,16 +25,15 @@ class Adaline:
         return eqm
 
     def fit(self, max_epochs, learning_rate, precision):
-        eqm_atual = 0
-        eqm_antiga = 0
         X_train = self.M[:, :2]
         ones = -np.ones(X_train.shape[0]).reshape(-1, 1)
         X_train = np.hstack((ones, X_train))
-        y = self.M[:, -1]
         W = np.random.uniform(0, 1, self.M.shape[1])
 
         epochs = 0
         isPrecisionReached = False
+        eqm_atual = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
+        self.learning_curve = [eqm_atual]
 
         while epochs < max_epochs and not isPrecisionReached:
             eqm_antiga = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
@@ -46,6 +47,7 @@ class Adaline:
             epochs+=1
 
             eqm_atual = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
+            self.learning_curve.append(eqm_atual)
 
             if abs(eqm_atual - eqm_antiga) <= precision:
                 # print("reached precision ", precision)
@@ -61,4 +63,9 @@ class Adaline:
         #     # print(abs(eqm_atual - eqm_antiga))
         #     # print("Converged by reaching the desired precision")
 
+        self.W = W
         return W
+
+    def predict(self, x_with_bias):
+        u = np.dot(self.W, x_with_bias)
+        return self._bipolar_step_activation_function(u)

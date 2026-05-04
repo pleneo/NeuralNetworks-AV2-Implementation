@@ -2,22 +2,37 @@ import numpy as np
 
 
 class MultilayeredPerceptron:
-    def __init__(self, topology, X_train, Y_train, learning_rate, max_epochs, precision):
+    def __init__(
+        self,
+        topology,
+        X_train,
+        Y_train,
+        learning_rate,
+        max_epochs,
+        precision,
+        normalize_inputs=True,
+    ):
         self.learning_rate = learning_rate
         self.max_epochs = max_epochs
         self.precision = precision
+        self.normalize_inputs = normalize_inputs
+        self.learning_curve = []
 
         self.p, self.N = X_train.shape
         self.output_dim = Y_train.shape[0]
         self.topology = list(topology) + [self.output_dim]
 
-        self.feature_min = X_train.min(axis=1, keepdims=True)
-        self.feature_max = X_train.max(axis=1, keepdims=True)
-        self.feature_range = np.where(
-            self.feature_max - self.feature_min == 0,
-            1,
-            self.feature_max - self.feature_min,
-        )
+        if normalize_inputs:
+            self.feature_min = X_train.min(axis=1, keepdims=True)
+            self.feature_max = X_train.max(axis=1, keepdims=True)
+            self.feature_range = np.where(
+                self.feature_max - self.feature_min == 0,
+                1,
+                self.feature_max - self.feature_min,
+            )
+        else:
+            self.feature_min = np.zeros((self.p, 1))
+            self.feature_range = np.ones((self.p, 1))
 
         X_scaled = self._scale_inputs(X_train)
         self.X_train = np.vstack((-np.ones((1, self.N)), X_scaled))
@@ -35,6 +50,8 @@ class MultilayeredPerceptron:
         self.delta = [None] * len(self.W)
 
     def _scale_inputs(self, X):
+        if not self.normalize_inputs:
+            return X
         return 2 * ((X - self.feature_min) / self.feature_range) - 1
 
     def g(self, u):
@@ -81,6 +98,7 @@ class MultilayeredPerceptron:
     def fit(self):
         epochs = 0
         eqm = self.eqm()
+        self.learning_curve = [eqm]
 
         while epochs < self.max_epochs and eqm > self.precision:
             for k in range(self.N):
@@ -91,6 +109,7 @@ class MultilayeredPerceptron:
 
             epochs += 1
             eqm = self.eqm()
+            self.learning_curve.append(eqm)
 
         return self
 

@@ -12,6 +12,7 @@ class Perceptron:
         self.y = y
         self.max_epochs = max_epochs
         self.learning_rate = learning_rate
+        self.learning_curve = []
 
     def _bipolar_step_activation_function(self, x):
         if x >= 0:
@@ -28,6 +29,7 @@ class Perceptron:
 
         while error and epochs < self.max_epochs:
             error = False
+            epoch_errors = 0
             for x in range(self.X.shape[0]):
                 x_k = self.X[x]
                 u_k = np.dot(self.W, x_k)
@@ -36,8 +38,14 @@ class Perceptron:
                 if y_k != d_k:
                     self.W = self.W + (learning_rate * (d_k - y_k) * x_k)
                     error = True
+                    epoch_errors += 1
             epochs += 1
+            self.learning_curve.append(epoch_errors)
 
 
         #print("Convergence reached by max epochs" if epochs == self.max_epochs else 'hi lorena')
+        return self
 
+    def predict(self, x_with_bias):
+        u = np.dot(self.W, x_with_bias)
+        return self._bipolar_step_activation_function(u)
