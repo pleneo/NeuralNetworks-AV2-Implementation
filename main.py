@@ -43,6 +43,13 @@ MLP_TOPOLOGY_STUDY = {
     "overfitting": (50, 50),
 }
 
+RUN_TRAINING_EXAMPLE = True
+RUN_MONTE_CARLO = True
+RUN_SUMMARY_TABLES = True
+RUN_METRIC_BOXPLOTS = True
+RUN_BEST_WORST_ARTIFACTS = True
+RUN_TOPOLOGY_STUDY = True
+
 
 def load_spiral_data(file_name=DATA_FILE):
     M, *_ = ParametersSeparator(file_name, (0, 1)).createParameters()
@@ -382,14 +389,24 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     M = load_spiral_data()
 
-    save_training_example(M, OUTPUT_DIR)
+    if RUN_TRAINING_EXAMPLE:
+        save_training_example(M, OUTPUT_DIR)
 
-    results = run_monte_carlo_validation(M)
-    print_validation_results(results)
-    write_summary_tables(results, OUTPUT_DIR)
-    save_metric_boxplots(results, OUTPUT_DIR)
-    save_best_worst_artifacts(results, OUTPUT_DIR)
-    run_mlp_topology_study(M, OUTPUT_DIR)
+    if RUN_MONTE_CARLO:
+        results = run_monte_carlo_validation(M)
+        print_validation_results(results)
+
+        if RUN_SUMMARY_TABLES:
+            write_summary_tables(results, OUTPUT_DIR)
+
+        if RUN_METRIC_BOXPLOTS:
+            save_metric_boxplots(results, OUTPUT_DIR)
+
+        if RUN_BEST_WORST_ARTIFACTS:
+            save_best_worst_artifacts(results, OUTPUT_DIR)
+
+    if RUN_TOPOLOGY_STUDY:
+        run_mlp_topology_study(M, OUTPUT_DIR)
 
     print(f"\nArtefatos salvos em: {OUTPUT_DIR.resolve()}")
 
