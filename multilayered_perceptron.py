@@ -119,6 +119,28 @@ class MultilayeredPerceptron:
         x_with_bias = np.vstack((-np.ones((1, 1)), x_scaled))
         return self.forward(x_with_bias)
 
+    def predict_raw_batch(self, X):
+        X = np.asarray(X, dtype=float)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        if X.shape[1] != self.p:
+            raise ValueError(f"Expected {self.p} features, received {X.shape[1]}")
+
+        X_scaled = self._scale_inputs(X.T)
+        activations = np.vstack((-np.ones((1, X_scaled.shape[1])), X_scaled))
+        for layer_index, W in enumerate(self.W):
+            u = W @ activations
+            y = self.g(u)
+            if layer_index < len(self.W) - 1:
+                activations = np.vstack((-np.ones((1, y.shape[1])), y))
+            else:
+                activations = y
+        return activations
+
     def predict(self, x):
         raw_output = self.predict_raw(x)
+        return np.where(raw_output >= 0, 1, -1).reshape(-1)
+
+    def predict_batch(self, X):
+        raw_output = self.predict_raw_batch(X)
         return np.where(raw_output >= 0, 1, -1).reshape(-1)

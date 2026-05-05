@@ -69,3 +69,7 @@ class Adaline:
     def predict(self, x_with_bias):
         u = np.dot(self.W, x_with_bias)
         return self._bipolar_step_activation_function(u)
+
+    def predict_batch(self, X_with_bias):
+        activations = np.asarray(X_with_bias) @ self.W
+        return np.where(activations >= 0, 1, -1)

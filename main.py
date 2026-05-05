@@ -180,7 +180,7 @@ def plot_mlp_decision_boundary(ax, mlp, M_normalized, grid_size=250):
     )
 
     grid_points = np.c_[xx.ravel(), yy.ravel()]
-    predictions = np.array([mlp.predict(point)[0] for point in grid_points])
+    predictions = mlp.predict_batch(grid_points)
     zz = predictions.reshape(xx.shape)
 
     ax.contourf(

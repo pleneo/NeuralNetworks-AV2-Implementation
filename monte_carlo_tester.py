@@ -155,25 +155,30 @@ class MonteCarloTester:
 
     def run_test(self):
         X_test = self.M_test[:, :3]
-        confusion_matrix = [[0, 0], [0, 0]]
+        predictions = self._predict_batch(X_test)
+        targets = self.M_test[:, -1].astype(int)
 
-        for i in range(X_test.shape[0]):
-            y_k = self._predict_sample(X_test[i])
-            d_k = self.M_test[i, -1]
+        vp = int(np.sum((targets == 1) & (predictions == 1)))
+        vn = int(np.sum((targets == -1) & (predictions == -1)))
+        fp = int(np.sum((targets == -1) & (predictions == 1)))
+        fn = int(np.sum((targets == 1) & (predictions == -1)))
 
-            if d_k == y_k and (d_k == +1 and y_k == +1):
-                confusion_matrix[0][0] += 1 # VP
+        return [[vp, fp], [fn, vn]]
 
-            if d_k == y_k and (d_k == -1 and y_k == -1):
-                confusion_matrix[1][1] += 1 # VN
+    def _predict_batch(self, X_with_bias):
+        if hasattr(self.model_or_weights, "predict_batch"):
+            if isinstance(self.model_or_weights, MultilayeredPerceptron):
+                predictions = self.model_or_weights.predict_batch(X_with_bias[:, 1:])
+            else:
+                predictions = self.model_or_weights.predict_batch(X_with_bias)
+            return np.asarray(predictions, dtype=int).reshape(-1)
 
-            if d_k != y_k and (d_k == -1 and y_k == +1):
-                confusion_matrix[0][1] += 1 # FP
+        if hasattr(self.model_or_weights, "predict"):
+            predictions = [self.model_or_weights.predict(sample) for sample in X_with_bias]
+            return np.asarray(predictions, dtype=int).reshape(-1)
 
-            if d_k != y_k and (d_k == +1 and y_k == -1):
-                confusion_matrix[1][0] += 1 # FN
-
-        return confusion_matrix
+        activations = X_with_bias @ self.model_or_weights
+        return np.where(activations >= 0, 1, -1).astype(int)
 
     def _predict_sample(self, x_with_bias):
         if hasattr(self.model_or_weights, "predict"):
