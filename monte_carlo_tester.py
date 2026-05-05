@@ -1,3 +1,6 @@
+import os
+from concurrent.futures import ProcessPoolExecutor
+
 import numpy as np
 
 from adaline import Adaline
@@ -84,6 +87,8 @@ def tests_set(
     perceptron_learning_rate=None,
     adaline_max_epochs=None,
     adaline_learning_rate=None,
+    parallel=True,
+    max_workers=None,
     return_legacy=False,
 ):
     perceptron_max_epochs = perceptron_max_epochs or max_epochs
@@ -92,46 +97,123 @@ def tests_set(
     adaline_learning_rate = adaline_learning_rate or learning_rate
 
     results = MonteCarloResults()
-
-    for round_index in range(1, R + 1):
-        M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
-        M_train, M_test = normalize_train_test(M_train, M_test)
-
-        perceptron_weights = np.random.uniform(0, 1, M_train.shape[1] - 1)
-        perceptron = Perceptron(
-            M_train[:, :3],
-            M_train,
-            perceptron_weights,
-            M_train[:, -1],
+    round_args = [
+        (
+            round_index,
+            M,
             perceptron_max_epochs,
             perceptron_learning_rate,
-        )
-        perceptron.fit()
-
-        adaline = Adaline(M_train[:, 1:])
-        adaline.fit(adaline_max_epochs, adaline_learning_rate, precision)
-
-        X_train_mlp = M_train[:, 1:3].T
-        Y_train_mlp = M_train[:, -1].reshape(1, -1)
-        mlp = MultilayeredPerceptron(
-            list(mlp_topology),
-            X_train_mlp,
-            Y_train_mlp,
+            adaline_max_epochs,
+            adaline_learning_rate,
+            precision,
+            mlp_topology,
             mlp_learning_rate,
             mlp_max_epochs,
             mlp_precision,
-            normalize_inputs=False,
         )
-        mlp.fit()
+        for round_index in range(1, R + 1)
+    ]
 
-        evaluate_model(results, "perceptron", round_index, M_test, perceptron)
-        evaluate_model(results, "adaline", round_index, M_test, adaline)
-        evaluate_model(results, "mlp", round_index, M_test, mlp)
+    use_parallel = parallel and R > 1
+    if max_workers == 1:
+        use_parallel = False
+
+    if use_parallel:
+        worker_count = max_workers or os.cpu_count() or 1
+        try:
+            with ProcessPoolExecutor(max_workers=worker_count) as executor:
+                round_results = executor.map(_run_single_round, round_args)
+                for round_result in round_results:
+                    _append_round_results(results, round_result)
+        except (OSError, PermissionError):
+            for round_args_item in round_args:
+                round_result = _run_single_round(round_args_item)
+                _append_round_results(results, round_result)
+    else:
+        for round_args_item in round_args:
+            round_result = _run_single_round(round_args_item)
+            _append_round_results(results, round_result)
 
     if return_legacy:
         return results.as_legacy_tuple()
 
     return results
+
+
+def _run_single_round(args):
+    (
+        round_index,
+        M,
+        perceptron_max_epochs,
+        perceptron_learning_rate,
+        adaline_max_epochs,
+        adaline_learning_rate,
+        precision,
+        mlp_topology,
+        mlp_learning_rate,
+        mlp_max_epochs,
+        mlp_precision,
+    ) = args
+
+    M_train, M_test = DataMonteCarlifier(M).matrix_carlifier()
+    M_train, M_test = normalize_train_test(M_train, M_test)
+
+    perceptron_weights = np.random.uniform(0, 1, M_train.shape[1] - 1)
+    perceptron = Perceptron(
+        M_train[:, :3],
+        M_train,
+        perceptron_weights,
+        M_train[:, -1],
+        perceptron_max_epochs,
+        perceptron_learning_rate,
+    )
+    perceptron.fit()
+
+    adaline = Adaline(M_train[:, 1:])
+    adaline.fit(adaline_max_epochs, adaline_learning_rate, precision)
+
+    X_train_mlp = M_train[:, 1:3].T
+    Y_train_mlp = M_train[:, -1].reshape(1, -1)
+    mlp = MultilayeredPerceptron(
+        list(mlp_topology),
+        X_train_mlp,
+        Y_train_mlp,
+        mlp_learning_rate,
+        mlp_max_epochs,
+        mlp_precision,
+        normalize_inputs=False,
+    )
+    mlp.fit()
+
+    return {
+        "perceptron": _evaluate_round_model(round_index, M_test, perceptron),
+        "adaline": _evaluate_round_model(round_index, M_test, adaline),
+        "mlp": _evaluate_round_model(round_index, M_test, mlp),
+    }
+
+
+def _evaluate_round_model(round_index, M_test, model):
+    tester = MonteCarloTester(M_test, model)
+    confusion_matrix = tester.run_test()
+    metric_values = tester.calculate_validation_metrics(confusion_matrix)
+    learning_curve = getattr(model, "learning_curve", [])
+    return {
+        "round": round_index,
+        "confusion_matrix": confusion_matrix,
+        "metrics": metric_values,
+        "learning_curve": learning_curve,
+    }
+
+
+def _append_round_results(results, round_result):
+    for model_key, model_result in round_result.items():
+        results.add_record(
+            model_key,
+            model_result["round"],
+            model_result["confusion_matrix"],
+            model_result["metrics"],
+            model_result["learning_curve"],
+        )
 
 
 def evaluate_model(results, model_key, round_index, M_test, model):
