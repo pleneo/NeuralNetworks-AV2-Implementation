@@ -13,6 +13,8 @@ class Perceptron:
         self.max_epochs = max_epochs
         self.learning_rate = learning_rate
         self.learning_curve = []
+        self.progress_prefix = ""
+        self.halfway_epoch = max_epochs // 2
 
     def _bipolar_step_activation_function(self, x):
         if x >= 0:
@@ -41,6 +43,8 @@ class Perceptron:
                     epoch_errors += 1
             epochs += 1
             self.learning_curve.append(epoch_errors)
+            if self.halfway_epoch > 0 and epochs == self.halfway_epoch:
+                print(f"{self.progress_prefix}[Perceptron] epoca {epochs} | erros={epoch_errors}")
 
 
         #print("Convergence reached by max epochs" if epochs == self.max_epochs else 'hi lorena')

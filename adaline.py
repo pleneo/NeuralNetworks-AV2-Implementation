@@ -6,6 +6,8 @@ class Adaline:
         self.M = M
         self.W = None
         self.learning_curve = []
+        self.progress_prefix = ""
+        self.halfway_epoch = 0
 
     def _bipolar_step_activation_function(self, x):
         if x >= 0:
@@ -24,6 +26,7 @@ class Adaline:
         ones = -np.ones(X_train.shape[0]).reshape(-1, 1)
         X_train = np.hstack((ones, X_train))
         W = np.random.uniform(0, 1, self.M.shape[1])
+        self.halfway_epoch = max_epochs // 2
 
         epochs = 0
         isPrecisionReached = False
@@ -43,6 +46,8 @@ class Adaline:
 
             eqm_atual = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
             self.learning_curve.append(eqm_atual)
+            if self.halfway_epoch > 0 and epochs == self.halfway_epoch:
+                print(f"{self.progress_prefix}[Adaline] epoca {epochs} | eqm={eqm_atual:.8f}")
 
             if abs(eqm_atual - eqm_antiga) <= precision:
                 # print("reached precision ", precision)

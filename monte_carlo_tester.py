@@ -167,9 +167,11 @@ def _run_single_round(args):
         perceptron_max_epochs,
         perceptron_learning_rate,
     )
+    perceptron.progress_prefix = f"[Rodada {round_index}] "
     perceptron.fit()
 
     adaline = Adaline(M_train[:, 1:])
+    adaline.progress_prefix = f"[Rodada {round_index}] "
     adaline.fit(adaline_max_epochs, adaline_learning_rate, precision)
 
     X_train_mlp = M_train[:, 1:3].T
@@ -183,6 +185,7 @@ def _run_single_round(args):
         mlp_precision,
         normalize_inputs=False,
     )
+    mlp.progress_prefix = f"[Rodada {round_index}] "
     mlp.fit()
 
     return {
@@ -214,6 +217,8 @@ def _append_round_results(results, round_result):
             model_result["metrics"],
             model_result["learning_curve"],
         )
+    round_index = next(iter(round_result.values()))["round"]
+    print(f"[Rodada {round_index}] concluida")
 
 
 def evaluate_model(results, model_key, round_index, M_test, model):

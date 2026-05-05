@@ -17,6 +17,8 @@ class MultilayeredPerceptron:
         self.precision = precision
         self.normalize_inputs = normalize_inputs
         self.learning_curve = []
+        self.progress_prefix = ""
+        self.halfway_epoch = max_epochs // 2
 
         self.p, self.N = X_train.shape
         self.output_dim = Y_train.shape[0]
@@ -116,6 +118,8 @@ class MultilayeredPerceptron:
             epochs += 1
             eqm = self.eqm()
             self.learning_curve.append(eqm)
+            if self.halfway_epoch > 0 and epochs == self.halfway_epoch:
+                print(f"{self.progress_prefix}[MLP] epoca {epochs} | eqm={eqm:.8f}")
 
         return self
 
