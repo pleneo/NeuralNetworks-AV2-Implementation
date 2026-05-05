@@ -14,15 +14,10 @@ class Adaline:
             return -1
 
     def _calculate_least_mean_squared(self, p, W, X_train):
-        eqm = 0
-        for i in range(X_train.shape[0]):
-            u = np.dot(W, X_train[i])
-            d_k = self.M[i, -1]
-            eqm = eqm + ((d_k - u)**2)
-
-        eqm = eqm/p
-
-        return eqm
+        predictions = X_train @ W
+        targets = self.M[:, -1]
+        errors = targets - predictions
+        return np.sum(errors**2) / p
 
     def fit(self, max_epochs, learning_rate, precision):
         X_train = self.M[:, :2]
@@ -36,7 +31,7 @@ class Adaline:
         self.learning_curve = [eqm_atual]
 
         while epochs < max_epochs and not isPrecisionReached:
-            eqm_antiga = self._calculate_least_mean_squared(self.M.shape[0], W, X_train)
+            eqm_antiga = eqm_atual
 
             for i in range(self.M.shape[0]):
                 u_k = np.dot(W, X_train[i])

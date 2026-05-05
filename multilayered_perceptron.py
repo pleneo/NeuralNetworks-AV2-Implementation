@@ -61,14 +61,20 @@ class MultilayeredPerceptron:
         s = self.g(u)
         return 0.5 * (1 - s**2)
 
+    def _forward_batch(self, X_with_bias):
+        activations = X_with_bias
+        for layer_index, W in enumerate(self.W):
+            u = W @ activations
+            y = self.g(u)
+            if layer_index < len(self.W) - 1:
+                activations = np.vstack((-np.ones((1, y.shape[1])), y))
+            else:
+                activations = y
+        return activations
+
     def eqm(self):
-        eqm = 0.0
-        for k in range(self.N):
-            x_k = self.X_train[:, k].reshape(self.p + 1, 1)
-            self.forward(x_k)
-            d_k = self.D[:, k].reshape(self.output_dim, 1)
-            eqm += np.sum((d_k - self.y[-1]) ** 2)
-        return eqm / (2 * self.N)
+        predictions = self._forward_batch(self.X_train)
+        return np.sum((self.D - predictions) ** 2) / (2 * self.N)
 
     def forward(self, x):
         for j, W in enumerate(self.W):
@@ -127,15 +133,8 @@ class MultilayeredPerceptron:
             raise ValueError(f"Expected {self.p} features, received {X.shape[1]}")
 
         X_scaled = self._scale_inputs(X.T)
-        activations = np.vstack((-np.ones((1, X_scaled.shape[1])), X_scaled))
-        for layer_index, W in enumerate(self.W):
-            u = W @ activations
-            y = self.g(u)
-            if layer_index < len(self.W) - 1:
-                activations = np.vstack((-np.ones((1, y.shape[1])), y))
-            else:
-                activations = y
-        return activations
+        X_with_bias = np.vstack((-np.ones((1, X_scaled.shape[1])), X_scaled))
+        return self._forward_batch(X_with_bias)
 
     def predict(self, x):
         raw_output = self.predict_raw(x)
